@@ -25,8 +25,8 @@ def generate(n: int = 5000, fraud_prior: float = 0.05, seed: int = 42) -> pd.Dat
     discount_ratio = np.where(fraud, rng.beta(3, 3, n) * 0.7, rng.beta(2, 8, n) * 0.35).round(3)
     account_age = np.where(fraud, rng.exponential(15, n), 30 + rng.exponential(300, n)).round(1)
     hours_since = np.where(fraud, rng.exponential(10, n), rng.exponential(200, n)).round(1)
-    velocity = np.where(fraud, rng.integers(1, 6, n),
-                        rng.choice([0, 0, 0, 0, 0, 1, 1, 2, 3], n))
+    velocity = np.where(fraud, rng.integers(2, 7, n),
+                        rng.choice([0, 0, 0, 0, 0, 0, 1, 1, 2], n))
     failed = np.where(fraud, rng.integers(0, 4, n),
                       rng.choice([0, 0, 0, 0, 0, 0, 1, 2], n))
     mismatch = np.where(fraud, rng.random(n) < 0.55, rng.random(n) < 0.08).astype(int)
@@ -35,7 +35,7 @@ def generate(n: int = 5000, fraud_prior: float = 0.05, seed: int = 42) -> pd.Dat
     hour = np.where(fraud, rng.choice([0, 1, 2, 3, 4, 22, 23], n),
                     np.where(night, rng.integers(0, 6, n), rng.integers(6, 24, n)))
     labels = fraud.astype(int)
-    flip = rng.random(n) < 0.015  # label noise
+    flip = rng.random(n) < 0.005  # small label noise, as in real chargeback data
     labels = np.where(flip, 1 - labels, labels)
 
     df = pd.DataFrame({

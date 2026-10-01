@@ -80,6 +80,11 @@ def _do_login(db: Session, email: str, password: str) -> TokenOut:
             if user.failed_logins >= settings.FAILED_LOGIN_LIMIT:
                 user.status = "locked"
                 _audit(db, user_id=user.id, action="user.locked")
+                from app.services.activity import notify  # doc 3.7: repeated failed logins
+                notify(db, user_id=user.id, type="account_locked", channel="both",
+                       email=user.email, subject="Account locked",
+                       body="Locked after repeated failed logins. Reset your password.",
+                       payload={"failed_logins": user.failed_logins})
             db.commit()
         raise HTTPException(401, "Invalid credentials")
     _check_lock(user)

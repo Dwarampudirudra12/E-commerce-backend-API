@@ -1,0 +1,27 @@
+groups:
+  - name: ecom-api
+    interval: 30s
+    rules:
+      - alert: ApiErrorSpike
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.02
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "5xx rate above 2% for 5 minutes"
+
+      - alert: HighP95Latency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 latency above 300ms for catalog reads"
+
+      - alert: FraudHoldSpike
+        expr: sum(rate(fraud_scored_total{label="high"}[15m])) > 0.05
+        for: 10m
+        labels:
+          severity: high
+        annotations:
+          summary: "Elevated fraud-hold rate — review queue growing"

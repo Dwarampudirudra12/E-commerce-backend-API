@@ -22,6 +22,7 @@ from app.models.user import Address, User
 from app.schemas.order import CheckoutIn, OrderOut, StatusPatch
 from app.services import fraud as fraud_svc
 from app.services.activity import audit, notify
+from app.services import alerts
 from app.services.inventory import (InsufficientStock, commit_stock, lock_inventory_rows,
                                     release_stock, reserve_stock)
 from app.services.payment_gateway import create_intent
@@ -167,7 +168,8 @@ def checkout(data: CheckoutIn, idempotency_key: str | None = Header(None, alias=
                             discount_ratio=discount_ratio, shipping=data.shipping_address or {})
     score, f_label, factors = fraud_svc.score_order(feats)
     order.risk_score = score
-    db.add(MlPrediction(model_name="fraud", model_version="m2-baseline-1",
+    db.add(MlPrediction(model_name="fraud",
+                        model_version=fraud_svc._bundle().get("version", "rule-fallback"),
                         entity_type="order", entity_id=str(order.id),
                         score=score, label=f_label, top_factors=factors))
     metrics.FRAUD_SCORED.labels(label=f_label).inc()
@@ -195,6 +197,8 @@ def checkout(data: CheckoutIn, idempotency_key: str | None = Header(None, alias=
 
     for it in items:
         db.delete(it)
+    for pid in {i.product_id for i in items}:  # doc 3.7: low-stock alert
+        alerts.check_low_stock(db, pid)
     notify(db, user_id=user.id, type="order_created", channel="both", email=user.email,
            subject=f"Order {order.order_number} received",
            body=f"Total ${totals['total']}, status {order.status}",
@@ -220,6 +224,22 @@ def list_orders(page: int = 1, page_size: int = 20,
     total = q.count()
     return {"items": [_order_out(o, db) for o in q.offset((page - 1) * page_size).limit(page_size).all()],
             "total": total, "page": page, "page_size": page_size}
+
+
+@router.get("/review/queue", response_model=dict)
+def review_queue(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Manual-review queue: ON_HOLD orders with risk factors (doc 3.4/M3)."""
+    if user.role not in ("SUPPORT", "ADMIN"):
+        raise HTTPException(403, "Support and admins only")
+    held = db.query(Order).filter(Order.status == "ON_HOLD").order_by(Order.id.desc()).all()
+    items = []
+    for o in held:
+        pred = db.query(MlPrediction).filter(MlPrediction.model_name == "fraud",
+                                             MlPrediction.entity_id == str(o.id)
+                                             ).order_by(MlPrediction.id.desc()).first()
+        items.append({**_order_out(o, db),
+                      "risk_factors": (pred.top_factors if pred else []) or []})
+    return {"items": items, "total": len(items)}
 
 
 @router.get("/{order_id}", response_model=OrderOut)
@@ -271,6 +291,13 @@ def change_status(order_id: int, data: StatusPatch,
     order.status = dest
     audit(db, user_id=user.id, action=f"order.status_{dest.lower()}",
           entity_type="order", entity_id=str(order.id))
+    if dest in ("SHIPPED", "DELIVERED"):  # doc 3.7: customer email + in-app
+        customer = db.query(User).filter(User.id == order.user_id).first()
+        notify(db, user_id=order.user_id, type=f"order_{dest.lower()}", channel="both",
+               email=customer.email if customer else None,
+               subject=f"Order {order.order_number} {dest.lower()}",
+               body=f"Your order is {dest.lower()}.",
+               payload={"order_id": order.id})
     db.commit()
     db.refresh(order)
     return _order_out(order, db)

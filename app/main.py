@@ -12,18 +12,17 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core import metrics as prom
 from app.core.config import get_settings
-from app.routers import auth, cart, catalog, health, orders, payments, reports, users
+from app.routers import auth, cart, catalog, forecast, health, notifications, orders, payments, recommend, reports, users
 
 settings = get_settings()
 structlog.configure(processors=[structlog.processors.JSONRenderer()])
 
 app = FastAPI(
     title="E-Commerce Backend API",
-    version="0.2.0-m2",
+    version="0.3.0-m3",
     description=(
-        "M2: browse-to-pay core. Catalog/search, cart, idempotent checkout with "
-        "row-level stock locking, test-mode payments with signed webhooks, "
-        "fraud baseline, RBAC for 4 roles."
+        "M3: fraud tuning + review queue, demand forecasts, recommendations, "
+        "notifications, analytics + dashboard APIs."
     ),
     docs_url="/docs",
     redoc_url="/redoc",
@@ -84,6 +83,9 @@ app.include_router(cart.router, prefix=settings.API_V1_PREFIX)
 app.include_router(orders.router, prefix=settings.API_V1_PREFIX)
 app.include_router(payments.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reports.router, prefix=settings.API_V1_PREFIX)
+app.include_router(forecast.router, prefix=settings.API_V1_PREFIX)
+app.include_router(recommend.router, prefix=settings.API_V1_PREFIX)
+app.include_router(notifications.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/metrics", include_in_schema=False)
