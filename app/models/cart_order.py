@@ -37,7 +37,8 @@ class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    order_number: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    # Assigned right after INSERT (needs the row id); nullable until then.
+    order_number: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     status: Mapped[str] = mapped_column(String(32), default="CREATED", index=True)
     subtotal: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
