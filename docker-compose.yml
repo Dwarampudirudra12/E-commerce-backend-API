@@ -9,6 +9,7 @@ services:
       DATABASE_URL: postgresql+psycopg2://ecom:ecom@db:5432/ecom
       REDIS_URL: redis://redis:6379/0
       PYTHONPATH: /code
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
     ports:
       - "8000:8000"
     depends_on:
@@ -53,6 +54,66 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # M3 background jobs (opt-in): docker compose --profile jobs up worker beat
+  worker:
+    build: .
+    container_name: ecom-worker
+    command: celery -A app.worker.celery worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://ecom:ecom@db:5432/ecom
+      REDIS_URL: redis://redis:6379/0
+      PYTHONPATH: /code
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/code/app
+    profiles: ["jobs"]
+
+  beat:
+    build: .
+    container_name: ecom-beat
+    command: celery -A app.worker.celery beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://ecom:ecom@db:5432/ecom
+      REDIS_URL: redis://redis:6379/0
+      PYTHONPATH: /code
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/code/app
+    profiles: ["jobs"]
+
+  # M3 observability (opt-in): docker compose --profile monitoring up prometheus grafana
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: ecom-prometheus
+    ports:
+      - "${PROM_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+    profiles: ["monitoring"]
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: ecom-grafana
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    profiles: ["monitoring"]
 
 volumes:
   pgdata:

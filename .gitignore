@@ -10,3 +10,12 @@ venv/
 .coverage
 htmlcov/
 *.log
+# ML artefacts (regenerated via python -m app.ml.train)
+app/ml/artifacts/
+app/ml/data/
+uploads/
+*.db
+*.db-wal
+*.db-shm
+frontend/node_modules/
+frontend/dist/

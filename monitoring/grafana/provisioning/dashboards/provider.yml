@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: ecom
+    folder: E-Commerce
+    type: file
+    options:
+      path: /etc/grafana/dashboards

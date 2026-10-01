@@ -1,9 +1,16 @@
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext.jsx";
+import { PermissionProvider } from "./contexts/PermissionContext.jsx";
+import AppRoutes from "./routes/AppRoutes.jsx";
+
 export default function App() {
   return (
-    <main style={{ fontFamily: "system-ui", padding: 24 }}>
-      <h1>E-Commerce Analytics Dashboard (M1 skeleton)</h1>
-      <p>KPIs, charts, filters + CSV export land in Milestone 3 (doc 3.8).</p>
-      <p>API health: <code>/health/live</code> — docs: <code>/docs</code></p>
-    </main>
+    <BrowserRouter>
+      <AuthProvider>
+        <PermissionProvider>
+          <AppRoutes />
+        </PermissionProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
