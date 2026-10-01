@@ -12,7 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core import metrics as prom
 from app.core.config import get_settings
-from app.routers import auth, cart, catalog, forecast, health, notifications, orders, payments, recommend, reports, users
+from app.routers import admin, auth, cart, catalog, forecast, health, notifications, orders, payments, recommend, reports, users
 
 settings = get_settings()
 structlog.configure(processors=[structlog.processors.JSONRenderer()])
@@ -89,6 +89,7 @@ async def validation_error(request: Request, exc: RequestValidationError):
 # Versioned API (doc 1.3: /api/v1 single source of truth).
 app.include_router(health.router)  # unversioned: /health/live, /health/ready
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
+app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
 app.include_router(catalog.router, prefix=settings.API_V1_PREFIX)
 app.include_router(catalog.cat_router, prefix=settings.API_V1_PREFIX)

@@ -83,20 +83,7 @@ async def webhook(request: Request, db: Session = Depends(get_db),
 
     order = db.query(Order).filter(Order.id == pay.order_id).first()
     if etype == "payment.succeeded":
-        pay.status = "SUCCEEDED"
-        for i in db.query(OrderItem).filter(OrderItem.order_id == order.id).all():
-            commit_stock(db, product_id=i.product_id, variant_id=i.variant_id, qty=i.quantity)
-        if order.status in ("PENDING_PAYMENT", "ON_HOLD", "CREATED"):
-            db.add(OrderStatusHistory(order_id=order.id, from_status=order.status,
-                                      to_status="PAID", note="webhook verified"))
-            order.status = "PAID"
-        audit(db, user_id=order.user_id, action="payment.succeeded",
-              entity_type="order", entity_id=str(order.id))
-        notify(db, user_id=order.user_id, type="order_confirmed", channel="both",
-               email=db.query(User).filter(User.id == order.user_id).first().email,
-               subject=f"Order {order.order_number} paid",
-               body=f"Payment of ${float(pay.amount)} confirmed.",
-               payload={"order_id": order.id})
+        _apply_success(db, pay, order, via="webhook verified")
         metrics.PAYMENT_WEBHOOKS.labels(result="paid").inc()
     else:
         pay.status = "FAILED"
@@ -110,6 +97,55 @@ async def webhook(request: Request, db: Session = Depends(get_db),
         metrics.PAYMENT_WEBHOOKS.labels(result="failed").inc()
     db.commit()
     return {"ok": True, "status": pay.status}
+
+
+@router.post("/by-order/{order_id}/confirm-test")
+def confirm_test_payment(order_id: int, user: User = Depends(get_current_user),
+                         db: Session = Depends(get_db)):
+    """Test-mode gateway confirmation for demos (mock gateway, non-prod only).
+
+    In production Stripe calls the signed webhook; this endpoint lets the
+    storefront complete a test-mode payment without gateway credentials.
+    Refused with 403 unless PAYMENT_GATEWAY=mock and APP_ENV!=prod.
+    """
+    settings = get_settings()
+    if settings.PAYMENT_GATEWAY != "mock" or settings.APP_ENV == "prod":
+        raise HTTPException(403, "Test-mode confirmation is disabled")
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if user.role == "CUSTOMER" and order.user_id != user.id:
+        raise HTTPException(403, "Not your order")
+    pay = db.query(Payment).filter(Payment.order_id == order_id).first()
+    if not pay:
+        raise HTTPException(404, "No payment yet")
+    if pay.status == "SUCCEEDED":
+        return {"ok": True, "deduped": True, "status": pay.status}
+    if pay.status != "PENDING":
+        raise HTTPException(400, f"Payment is {pay.status}")
+    pay.webhook_event_id = f"test-confirm-{pay.id}"
+    _apply_success(db, pay, order, via="test-mode confirmation")
+    db.commit()
+    return {"ok": True, "status": pay.status}
+
+
+def _apply_success(db: Session, pay: Payment, order: Order, via: str) -> None:
+    """Shared settlement path: webhook deliveries and the guarded test-mode
+    confirm endpoint both settle through here — exactly once."""
+    pay.status = "SUCCEEDED"
+    for i in db.query(OrderItem).filter(OrderItem.order_id == order.id).all():
+        commit_stock(db, product_id=i.product_id, variant_id=i.variant_id, qty=i.quantity)
+    if order.status in ("PENDING_PAYMENT", "ON_HOLD", "CREATED"):
+        db.add(OrderStatusHistory(order_id=order.id, from_status=order.status,
+                                  to_status="PAID", note=via))
+        order.status = "PAID"
+    audit(db, user_id=order.user_id, action="payment.succeeded",
+          entity_type="order", entity_id=str(order.id))
+    notify(db, user_id=order.user_id, type="order_confirmed", channel="both",
+           email=db.query(User).filter(User.id == order.user_id).first().email,
+           subject=f"Order {order.order_number} paid",
+           body=f"Payment of ${float(pay.amount)} confirmed.",
+           payload={"order_id": order.id})
 
 
 @router.post("/{payment_id}/refund")

@@ -35,6 +35,7 @@ class OrderItemOut(BaseModel):
 class OrderOut(BaseModel):
     id: int
     order_number: str
+    user_id: int  # staff attribution / support customer lookup
     status: str
     subtotal: float
     tax: float

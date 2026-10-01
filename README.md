@@ -50,3 +50,16 @@ pip install locust
 docker compose exec api python scripts/seed_load.py
 locust -f load/locustfile.py --headless -u 200 -r 20 --run-time 90s --host http://localhost:8000
 ```
+
+## Frontend (React + Vite + Tailwind)
+```powershell
+cd frontend
+Copy-Item .env.example .env   # VITE_API_BASE_URL, default http://localhost:8000
+npm install
+npm run dev                  # http://localhost:5173
+npm run build                # production bundle
+```
+Dark-glassmorphism storefront + seller/support/admin consoles, fraud
+intelligence, forecasting, analytics, notifications and system monitoring —
+see `frontend/README.md`. JWT auth with refresh, RBAC route guards mirroring
+the backend matrix (backend remains the security authority).
