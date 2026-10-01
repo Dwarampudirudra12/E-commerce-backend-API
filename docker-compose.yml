@@ -9,6 +9,7 @@ services:
       DATABASE_URL: postgresql+psycopg2://ecom:ecom@db:5432/ecom
       REDIS_URL: redis://redis:6379/0
       PYTHONPATH: /code
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
     ports:
       - "8000:8000"
     depends_on:

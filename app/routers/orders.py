@@ -42,7 +42,7 @@ TRANSITIONS: dict[str, list[str]] = {
 
 
 def _order_out(order: Order, db: Session) -> dict:
-    items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+    items = order.items  # selectin-loaded; no per-order query (M4)
     d = {c.name: getattr(order, c.name) for c in order.__table__.columns}
     for k in ("subtotal", "tax", "shipping", "discount", "total"):
         d[k] = float(d[k])

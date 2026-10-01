@@ -1,6 +1,7 @@
 """Pytest fixtures: isolated SQLite DB per test session, seeded roles."""
 import os
 os.environ["DATABASE_URL"] = "sqlite:///./test_m1.db"
+os.environ["APP_ENV"] = "test"  # bypasses rate limiting (M4)
 
 import pytest
 from fastapi.testclient import TestClient

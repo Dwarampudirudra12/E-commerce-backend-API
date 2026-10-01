@@ -21,6 +21,14 @@ class Settings(BaseSettings):
 
     FAILED_LOGIN_LIMIT: int = 5
 
+    # --- M4: pools / rate limits ---
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
+    DB_POOL_TIMEOUT: int = 30
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_AUTH_PER_MIN: int = 10
+    RATE_LIMIT_WEBHOOK_PER_MIN: int = 60
+
     # --- M2: pricing / checkout ---
     TAX_RATE: float = 0.08
     SHIPPING_FLAT: float = 4.0

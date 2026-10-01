@@ -31,6 +31,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
 
+def _not_expired(expires_at: datetime) -> bool:
+    """Timezone-safe expiry check (SQLite returns naive, Postgres aware)."""
+    exp = expires_at.replace(tzinfo=None) if expires_at.tzinfo else expires_at
+    return exp >= datetime.utcnow()
+
+
 def _audit(db: Session, *, user_id: int | None, action: str, ip: str = "") -> None:
     db.add(AuditLog(user_id=user_id, action=action, entity_type="user",
                     entity_id=str(user_id) if user_id else None, ip_address=ip or None))
@@ -151,7 +157,7 @@ def verify_email(data: VerifyEmailIn, db: Session = Depends(get_db)):
     token = db.query(EmailVerificationToken).filter(
         EmailVerificationToken.token_hash == hash_token(data.token),
         EmailVerificationToken.used == False).first()  # noqa: E712
-    if not token or token.expires_at < datetime.now(timezone.utc):
+    if not token or not _not_expired(token.expires_at):
         raise HTTPException(400, "Invalid or expired verification token")
     user = db.query(User).filter(User.id == token.user_id).first()
     user.email_verified = True
@@ -181,7 +187,7 @@ def reset_password(data: ResetPasswordIn, db: Session = Depends(get_db)):
     token = db.query(PasswordResetToken).filter(
         PasswordResetToken.token_hash == hash_token(data.token),
         PasswordResetToken.used == False).first()  # noqa: E712
-    if not token or token.expires_at < datetime.now(timezone.utc):
+    if not token or not _not_expired(token.expires_at):
         raise HTTPException(400, "Invalid or expired reset token")
     user = db.query(User).filter(User.id == token.user_id).first()
     user.password_hash = hash_password(data.new_password)

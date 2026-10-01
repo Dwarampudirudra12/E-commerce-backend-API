@@ -1,0 +1,3 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/api/v1/auth/register,HTTPError('429 Client Error: Too Many Requests for url: /api/v1/auth/register'),128,2026-10-01T12:52:42Z,2026-10-01T12:52:52Z
+POST,/api/v1/auth/login,HTTPError('429 Client Error: Too Many Requests for url: /api/v1/auth/login'),257,2026-10-01T12:52:42Z,2026-10-01T12:52:52Z
