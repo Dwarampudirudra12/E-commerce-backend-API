@@ -212,6 +212,9 @@ def update_inventory(product_id: int, data: InventoryPatch, user: User = Depends
     inv.version += 1
     audit(db, user_id=user.id, action="catalog.inventory_update",
           entity_type="product", entity_id=str(p.id))
+    db.flush()
+    from app.services import alerts
+    alerts.check_low_stock(db, product_id)
     db.commit()
     cache.cache_delete_prefix("catalog")
     return db.query(Inventory).filter(Inventory.product_id == product_id).all()

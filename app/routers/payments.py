@@ -60,6 +60,10 @@ async def webhook(request: Request, db: Session = Depends(get_db),
         ok = verify_mock_signature(body, x_signature or "")
     if not ok:
         metrics.PAYMENT_WEBHOOKS.labels(result="rejected").inc()
+        from app.models.observability import Notification  # doc 3.7: webhook failure
+        db.add(Notification(user_id=None, type="webhook_failure", channel="in_app",
+                            status="SENT", payload={"reason": "invalid signature"}))
+        db.commit()
         raise HTTPException(400, "Invalid webhook signature")
     try:
         event = await request.json()
