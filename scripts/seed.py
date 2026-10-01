@@ -67,6 +67,11 @@ def main() -> None:
                 db.flush()
                 db.add(Inventory(product_id=p.id, on_hand=stock, reserved=0, reorder_level=reorder))
         db.commit()
+        from app.models.payment import DiscountCode
+        if not db.query(DiscountCode).filter(DiscountCode.code == "WELCOME10").first():
+            db.add(DiscountCode(code="WELCOME10", percent_off=10, max_uses=1000,
+                                used_count=0, is_active=True))
+            db.commit()
         print("Seed OK: roles=%d users=%d products=%d" % (
             db.query(Role).count(), db.query(User).count(), db.query(Product).count()))
     finally:

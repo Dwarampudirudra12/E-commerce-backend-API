@@ -21,6 +21,19 @@ class Settings(BaseSettings):
 
     FAILED_LOGIN_LIMIT: int = 5
 
+    # --- M2: pricing / checkout ---
+    TAX_RATE: float = 0.08
+    SHIPPING_FLAT: float = 4.0
+    FREE_SHIPPING_THRESHOLD: float = 50.0
+    # --- M2: payments ---
+    PAYMENT_GATEWAY: str = "mock"  # mock | stripe (stripe used only if STRIPE_API_KEY is real)
+    STRIPE_API_KEY: str = "sk_test_placeholder"
+    STRIPE_WEBHOOK_SECRET: str = "whsec_placeholder"
+    WEBHOOK_SECRET: str = "dev-webhook-secret-change-me"
+    SUPPORT_REFUND_LIMIT: float = 100.0
+    # --- M2: reservation ---
+    RESERVATION_TTL_MINUTES: int = 15
+
     class Config:
         env_file = ".env"
         extra = "ignore"
