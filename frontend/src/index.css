@@ -1,0 +1,91 @@
+@import "./styles/tokens.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.1), transparent 38%),
+    radial-gradient(circle at 85% 15%, rgba(167, 139, 250, 0.08), transparent 40%),
+    radial-gradient(circle at 50% 110%, rgba(56, 189, 248, 0.05), transparent 45%),
+    var(--bg-primary);
+  color: var(--text-primary);
+  font-family: Inter, Manrope, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* faint grid texture for depth */
+.app-grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 75%);
+}
+
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-xl);
+}
+
+.glass-hover { transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+.glass-hover:hover {
+  border-color: var(--glass-border-bright);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 24px rgba(56, 189, 248, 0.1);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.glass-input::placeholder { color: var(--text-muted); }
+.glass-input:focus {
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+.glass-input:disabled { opacity: 0.55; }
+
+.btn-primary {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.12); }
+.btn-primary:active:not(:disabled) { transform: translateY(1px); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-ghost {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--glass-border-bright); background: rgba(255, 255, 255, 0.06); }
+
+.text-muted2 { color: var(--text-secondary); }
+.text-faint { color: var(--text-muted); }
+
+/* thin scrollbars */
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.16) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 8px; }
+
+/* accessible focus */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.7);
+  outline-offset: 2px;
+}
+
+/* chart tooltip glass */
+.chartjs-tooltip-glass { background: rgba(8, 11, 18, 0.92) !important; border: 1px solid var(--glass-border); border-radius: 12px; }
