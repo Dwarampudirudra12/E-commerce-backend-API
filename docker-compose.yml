@@ -1,0 +1,58 @@
+services:
+  api:
+    build: .
+    container_name: ecom-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://ecom:ecom@db:5432/ecom
+      REDIS_URL: redis://redis:6379/0
+      PYTHONPATH: /code
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/code/app
+      - ./alembic:/code/alembic
+      - ./scripts:/code/scripts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  db:
+    image: postgres:15
+    container_name: ecom-db
+    environment:
+      POSTGRES_USER: ecom
+      POSTGRES_PASSWORD: ecom
+      POSTGRES_DB: ecom
+    ports:
+      - "${POSTGRES_HOST_PORT:-5435}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecom"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: ecom-redis
+    ports:
+      - "${REDIS_HOST_PORT:-6381}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

@@ -1,0 +1,34 @@
+# Core
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+gunicorn==23.0.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+email-validator==2.2.0
+python-multipart==0.0.20
+# DB
+SQLAlchemy==2.0.36
+alembic==1.14.0
+psycopg2-binary==2.9.10
+# Cache / jobs (M2/M3 ready, imported lazily)
+redis==5.2.1
+celery==5.4.0
+# Auth / security (doc: JWT PyJWT + passlib+bcrypt)
+PyJWT==2.10.1
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+# Observability (M1 minimal, M2/M3 full)
+structlog==24.4.0
+prometheus-client==0.21.1
+# ML placeholders (full training in M2/M3)
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==1.26.4
+joblib==1.4.2
+# AWS / email (M2+)
+boto3==1.35.90
+# Dev / test
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+httpx==0.28.1

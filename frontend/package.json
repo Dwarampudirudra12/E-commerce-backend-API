@@ -1,0 +1,14 @@
+{
+  "name": "ecom-dashboard",
+  "private": true,
+  "version": "0.1.0-m1",
+  "description": "M1 React skeleton — full KPIs/charts in M3 (doc 3.8)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "react": "^18.3.0"
+  }
+}
