@@ -1,0 +1,32 @@
+{
+  "info": { "name": "E-Commerce Backend API (M1-M3)", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "variable": [
+    { "key": "base", "value": "http://localhost:8000" },
+    { "key": "access", "value": "" },
+    { "key": "order_id", "value": "" },
+    { "key": "gateway_ref", "value": "" }
+  ],
+  "item": [
+    { "name": "health", "request": { "method": "GET", "url": "{{base}}/health/live" } },
+    { "name": "register customer",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base}}/api/v1/auth/register",
+        "body": { "mode": "raw", "raw": "{\"email\": \"postman{{$timestamp}}@example.com\", \"password\": \"Password123!\"}" } } },
+    { "name": "login",
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('200 with tokens', () => { pm.response.to.have.status(200); });",
+        "const j = pm.response.json(); pm.collectionVariables.set('access', j.access_token);" ] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base}}/api/v1/auth/login",
+        "body": { "mode": "raw", "raw": "{\"email\": \"customer@example.com\", \"password\": \"Password123!\"}" } } },
+    { "name": "search catalog", "request": { "method": "GET", "url": "{{base}}/api/v1/products/search?q=mouse" } },
+    { "name": "checkout (idempotent)",
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('order created', () => { const j = pm.response.json(); pm.expect([200, 409]).to.include(pm.response.code); if (pm.response.code === 200) pm.collectionVariables.set('order_id', j.id); });" ] } }],
+      "request": { "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{access}}" }, { "key": "Idempotency-Key", "value": "postman-{{$timestamp}}" } ],
+        "url": "{{base}}/api/v1/orders",
+        "body": { "mode": "raw", "raw": "{\"shipping_address\": {\"country\": \"US\"}}" } } },
+    { "name": "metrics", "request": { "method": "GET", "url": "{{base}}/metrics" } }
+  ]
+}

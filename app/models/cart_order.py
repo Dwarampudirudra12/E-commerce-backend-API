@@ -1,7 +1,7 @@
 """Cart + order models with auditable state machine (doc 3.3)."""
 from datetime import datetime
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -51,6 +51,8 @@ class Order(Base):
     shipping_address: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    # M4: selectin kills the list-endpoint N+1 (no schema change).
+    items: Mapped[list["OrderItem"]] = relationship(lazy="selectin")
 
 
 class OrderItem(Base):

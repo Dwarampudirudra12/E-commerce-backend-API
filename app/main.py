@@ -42,6 +42,19 @@ app.add_middleware(
 async def request_id_logging(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     start = time.time()
+    # M4: rate-limit sensitive surfaces (auth brute force, webhook storms).
+    from app.core import ratelimit
+    if settings.RATE_LIMIT_ENABLED and settings.APP_ENV != "test":
+        bucket = ratelimit.bucket_for(request.url.path)
+        if bucket:
+            name, limit = bucket
+            ip = request.client.host if request.client else "unknown"
+            if not ratelimit.is_allowed(ip, name, limit):
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": "Rate limit exceeded, retry later.",
+                             "code": "rate_limited", "request_id": request_id},
+                )
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
     duration = time.time() - start
